@@ -8,6 +8,9 @@ import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {Math} from "@openzeppelin/contracts/utils/math/Math.sol";
 
+/// @title ERC20 Token Vesting
+/// @notice Releases a single ERC20 token through owner-managed linear vesting schedules.
+/// @dev The cliff delays claims, but vesting is calculated from the schedule's start time.
 contract Vesting is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
@@ -37,11 +40,16 @@ contract Vesting is Ownable, ReentrancyGuard {
 
     event ScheduleRevoked(uint256 indexed scheduleId, uint256 vestedAmount, uint256 refundedAmount);
 
+    /// @notice Token distributed by every schedule in this contract.
     IERC20 public immutable TOKEN;
+
+    /// @notice ID that will be assigned to the next schedule.
     uint256 public nextScheduleId;
 
+    /// @dev Times are stored as Unix timestamps or durations in seconds.
     struct Schedule {
         address beneficiary;
+        /// @dev Receives the unvested balance if the schedule is revoked.
         address funder;
         uint256 totalAmount;
         uint256 claimedAmount;
@@ -54,6 +62,8 @@ contract Vesting is Ownable, ReentrancyGuard {
 
     mapping(uint256 => Schedule) private schedules;
 
+    /// @param token_ ERC20 token distributed by this contract.
+    /// @param initialOwner Address allowed to create and revoke schedules.
     constructor(IERC20 token_, address initialOwner) Ownable(initialOwner) {
         if (address(token_) == address(0)) {
             revert InvalidToken();
@@ -62,6 +72,14 @@ contract Vesting is Ownable, ReentrancyGuard {
         TOKEN = token_;
     }
 
+    /// @notice Creates a schedule and deposits its full token allocation.
+    /// @dev The owner must approve `totalAmount` first. Passing zero for `startTime` uses the current block time.
+    /// @param beneficiary Address that can claim vested tokens.
+    /// @param totalAmount Total number of tokens allocated to the schedule.
+    /// @param startTime Unix timestamp when vesting starts, or zero to start immediately.
+    /// @param cliffDuration Time from the start until the first claim can be made.
+    /// @param duration Total vesting duration measured from the start.
+    /// @return scheduleId ID assigned to the new schedule.
     function createSchedule(
         address beneficiary,
         uint256 totalAmount,
@@ -120,22 +138,34 @@ contract Vesting is Ownable, ReentrancyGuard {
         emit ScheduleCreated(scheduleId, beneficiary, msg.sender, totalAmount, actualStartTime, cliffDuration, duration);
     }
 
+    /// @notice Returns the total amount vested so far, including tokens already claimed.
+    /// @param scheduleId ID of the schedule to inspect.
+    /// @return Total vested amount at the current block time.
     function vestedAmount(uint256 scheduleId) public view returns (uint256) {
         Schedule storage schedule = _getSchedule(scheduleId);
 
         return _vestedAmount(schedule, block.timestamp);
     }
 
+    /// @notice Returns the amount currently available to claim.
+    /// @param scheduleId ID of the schedule to inspect.
+    /// @return Vested amount that has not been claimed yet.
     function releasableAmount(uint256 scheduleId) public view returns (uint256) {
         Schedule storage schedule = _getSchedule(scheduleId);
 
         return _vestedAmount(schedule, block.timestamp) - schedule.claimedAmount;
     }
 
+    /// @notice Returns the stored data for a schedule.
+    /// @param scheduleId ID of the schedule to inspect.
+    /// @return Schedule data stored for the given ID.
     function getSchedule(uint256 scheduleId) external view returns (Schedule memory) {
         return _getSchedule(scheduleId);
     }
 
+    /// @notice Claims every token currently available to the beneficiary.
+    /// @param scheduleId ID of the schedule to claim from.
+    /// @return amount Number of tokens transferred to the beneficiary.
     function claim(uint256 scheduleId) external nonReentrant returns (uint256 amount) {
         Schedule storage schedule = _getSchedule(scheduleId);
 
@@ -151,7 +181,7 @@ contract Vesting is Ownable, ReentrancyGuard {
             revert NothingToClaim();
         }
 
-        // 상태를 먼저 변경한 후 토큰 전송
+        // Update state before calling the token contract.
         schedule.claimedAmount += amount;
 
         TOKEN.safeTransfer(schedule.beneficiary, amount);
@@ -159,6 +189,9 @@ contract Vesting is Ownable, ReentrancyGuard {
         emit TokensClaimed(scheduleId, schedule.beneficiary, amount);
     }
 
+    /// @notice Stops a schedule and returns its unvested tokens to the original funder.
+    /// @dev Vested but unclaimed tokens remain available to the beneficiary.
+    /// @param scheduleId ID of the schedule to revoke.
     function revoke(uint256 scheduleId) external onlyOwner nonReentrant {
         Schedule storage schedule = _getSchedule(scheduleId);
 
@@ -174,10 +207,7 @@ contract Vesting is Ownable, ReentrancyGuard {
             revert NothingToRevoke();
         }
 
-        /*
-         * revokedAt을 저장하면 vesting 시간이 이 시점에서 멈춘다.
-         * beneficiary는 이후에도 vested - claimed 만큼 claim할 수 있다.
-         */
+        // Freeze accrual at the revocation timestamp.
         schedule.revoked = true;
         schedule.revokedAt = uint64(block.timestamp);
 
@@ -186,10 +216,10 @@ contract Vesting is Ownable, ReentrancyGuard {
         emit ScheduleRevoked(scheduleId, vested, refundAmount);
     }
 
+    /// @dev Calculates total vested tokens at `timestamp` and freezes time at revocation.
     function _vestedAmount(Schedule storage schedule, uint256 timestamp) internal view returns (uint256) {
         uint256 effectiveTime = timestamp;
 
-        // 취소된 schedule은 취소 시점까지만 vesting된다.
         if (schedule.revoked && effectiveTime > schedule.revokedAt) {
             effectiveTime = schedule.revokedAt;
         }
@@ -208,11 +238,11 @@ contract Vesting is Ownable, ReentrancyGuard {
 
         uint256 elapsed = effectiveTime - start;
 
-        // totalAmount * elapsed / duration
-        // 일반 곱셈 대신 mulDiv를 사용해 overflow 위험을 줄인다.
+        // Avoid overflow in totalAmount * elapsed.
         return Math.mulDiv(schedule.totalAmount, elapsed, schedule.duration);
     }
 
+    /// @dev Returns the storage reference for an existing schedule.
     function _getSchedule(uint256 scheduleId) internal view returns (Schedule storage schedule) {
         if (scheduleId >= nextScheduleId) {
             revert ScheduleNotFound(scheduleId);
