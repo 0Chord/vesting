@@ -38,6 +38,7 @@ contract VestingFailureTest is Test {
         firstClaim = vesting.claim(scheduleId);
     }
 
+    /// @notice 정상 예치와 30일째 첫 청구 후 일정과 잔고가 올바르게 저장된다.
     function test_MockSupportsDepositAndInitialClaim() public view {
         assertFalse(token.revertTransfers());
         assertEq(token.decimals(), 18);
@@ -61,6 +62,7 @@ contract VestingFailureTest is Test {
         assertEq(schedule.revokedAt, 0);
     }
 
+    /// @notice 전송 실패 설정이 꺼져 있으면 40일째 추가 100토큰을 수령한다.
     function test_ClaimSucceedsWhenTransferFailureIsDisabled() public {
         _moveToDay40();
 
@@ -74,11 +76,13 @@ contract VestingFailureTest is Test {
         assertEq(vesting.releasableAmount(scheduleId), 0);
     }
 
+    /// @notice 토큰 전송이 실패하면 일정과 잔고가 청구 직전 상태로 유지된다.
     function test_ClaimPreservesStateWhenTokenTransferReverts() public {
         _moveToDay40();
         _assertFailedClaimPreservesState();
     }
 
+    /// @notice 실패 설정을 끄면 같은 시점에 재청구할 수 있고 중복 청구는 거절된다.
     function test_ClaimCanRetryAfterTransferFailureIsDisabled() public {
         _moveToDay40();
         _assertFailedClaimPreservesState();
@@ -105,6 +109,7 @@ contract VestingFailureTest is Test {
         assertEq(token.balanceOf(address(vesting)), 600 ether);
     }
 
+    /// @notice 전송 실패 설정이 켜져 있어도 토큰 발행과 새 일정 예치는 정상 동작한다.
     function test_TransferFailureDoesNotAffectMintOrTransferFrom() public {
         token.setRevertTransfers(true);
         token.mint(owner, 100 ether);
