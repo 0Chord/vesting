@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @notice Adversarial test token that burns the deposit plus one token from its recipient.
-/// @dev Requires an existing recipient balance. Used only to reach the balanceAfter < balanceBefore branch.
+/// @notice 수령 주소에서 입금액보다 1토큰 더 많이 소각하도록 설정할 수 있는 악의적 테스트 토큰이다.
+/// @dev 수령 주소에 기존 잔고가 필요하며, 입금 후 잔고가 입금 전보다 감소하는 분기만 재현한다.
 contract DecreasingBalanceERC20 is ERC20 {
     bool public decreaseOnDeposit;
 

@@ -450,7 +450,7 @@ contract VestingTokenBehaviorTest is Test {
         assertEq(vesting.nextScheduleId(), 1);
         assertEq(token.totalSupply(), TOTAL_AMOUNT);
 
-        // A failed earlier revoke must not freeze at day 60; a successful revoke must freeze forever.
+        // 실패한 취소는 지급 시각을 고정하지 않고, 성공한 취소는 이후 지급액을 계속 고정해야 한다.
         _moveToDay(100);
         assertEq(vesting.vestedAmount(0), 400 ether + remainder);
         vm.prank(beneficiary);
@@ -474,7 +474,7 @@ contract VestingTokenBehaviorTest is Test {
         returns (StateSnapshot memory state)
     {
         state.nextScheduleId = vesting.nextScheduleId();
-        // These fixtures have at most one existing schedule before the operation under test.
+        // 각 테스트 상황에서 검증 대상 함수를 실행하기 전에 존재하는 일정은 최대 하나다.
         if (state.nextScheduleId != 0) state.schedule = abi.encode(vesting.getSchedule(0));
         state.ownerBalance = token.balanceOf(owner);
         state.beneficiaryBalance = token.balanceOf(beneficiary);

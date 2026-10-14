@@ -3,8 +3,8 @@ pragma solidity ^0.8.24;
 
 import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.sol";
 
-/// @notice Minimal test ledger whose transfer, transferFrom and approve ABI has no return value.
-/// @dev Kept separate from ERC20 inheritance because Solidity cannot override bool with no return type.
+/// @notice transfer, transferFrom, approve의 ABI에 반환값이 없는 최소한의 테스트용 토큰 원장이다.
+/// @dev Solidity에서는 bool 반환 함수를 반환값 없이 재정의할 수 없어 ERC20 상속과 분리했다.
 contract NoReturnERC20 is IERC20Errors {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;

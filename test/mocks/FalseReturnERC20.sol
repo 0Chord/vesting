@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
-/// @notice Test token that can return false AFTER moving tokens, without reverting itself.
+/// @notice 토큰을 이동한 뒤 스스로 revert하지 않고 false를 반환하도록 설정할 수 있는 테스트 토큰이다.
 contract FalseReturnERC20 is ERC20 {
     bool public falseTransfers;
     bool public falseTransferFrom;
