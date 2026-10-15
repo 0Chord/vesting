@@ -30,6 +30,7 @@ contract VestingReentrancyTest is Test {
         bytes actorState;
     }
 
+    /// @notice 토큰·actor·Vesting을 순서대로 배포하고 콜백을 끈 공통 준비 상태를 만든다.
     function setUp() public {
         vm.warp(START_TIME);
         token = new CallbackERC20();
@@ -213,6 +214,9 @@ contract VestingReentrancyTest is Test {
         _assertStatePreserved(beforeState);
     }
 
+    /// @notice 중첩 호출을 설정하고 토큰의 콜백을 켠 뒤 초기 관찰 횟수가 0인지 확인한다.
+    /// @param nestedCall 실행할 Vesting 함수의 선택자와 인자를 인코딩한 데이터.
+    /// @param propagate 중첩 실패를 최초 작업까지 전파할지 여부.
     function _enableAttempt(bytes memory nestedCall, bool propagate) internal {
         actor.configureAttempt(nestedCall, propagate);
         token.setCallbackEnabled(true);
@@ -222,16 +226,22 @@ contract VestingReentrancyTest is Test {
         assertEq(actor.getCallbackRecord().attempts, 0);
     }
 
+    /// @notice actor에게 100토큰짜리 새 일정을 생성하는 중첩 호출 데이터를 준비한다.
+    /// @return 현재 시각 시작·cliff 20일·기간 100일 생성 호출의 ABI 데이터.
     function _nestedCreation() internal view returns (bytes memory) {
         return abi.encodeCall(Vesting.createSchedule, (address(actor), 100 ether, uint64(0), CLIFF_DURATION, DURATION));
     }
 
+    /// @notice 콜백이 정확히 한 번 진입하고 다음 최초 작업이 원본 잠금 오류로 실패하도록 기대한다.
+    /// @dev 실패하면 저장 관찰값도 롤백되므로 호출 기대 검사로 실제 콜백 진입을 확인한다.
     function _expectPropagatedFailure() internal {
         // 관찰값도 되돌아가므로 실행 도구의 호출 기대 검사로 콜백 진입을 따로 확인한다.
         vm.expectCall(address(actor), abi.encodeCall(ReentrantActor.onTokenTransfer, ()), uint64(1));
         vm.expectRevert(abi.encodeWithSelector(ReentrancyGuard.ReentrancyGuardReentrantCall.selector));
     }
 
+    /// @notice 중첩만 잠금으로 실패했고 최초 작업은 성공한 콜백의 기록·중간 상태를 검증한다.
+    /// @dev 시도 1회·실제 토큰 호출자·정확한 오류와 콜백 중 일정 0의 선갱신을 확인한다.
     function _assertCaughtAttempt() internal view {
         ReentrantActor.CallbackRecord memory observed = actor.getCallbackRecord();
         assertEq(observed.attempts, 1);
@@ -246,6 +256,8 @@ contract VestingReentrancyTest is Test {
         assertTrue(token.callbackEnabled());
     }
 
+    /// @notice 30일 최초 청구 300의 전체 일정·잔고·승인량·ID 결과를 수동 기대값과 비교한다.
+    /// @param reserve 일정 0에 예치하지 않고 추가 생성용으로 남긴 토큰·승인량. 0 또는 100토큰.
     function _assertClaimResult(uint256 reserve) internal view {
         assertEq(abi.encode(vesting.getSchedule(0)), abi.encode(_expectedSchedule(300 ether, false, 0)));
         assertEq(token.balanceOf(address(actor)), reserve + 300 ether);
@@ -258,6 +270,7 @@ contract VestingReentrancyTest is Test {
         assertEq(vesting.owner(), address(actor));
     }
 
+    /// @notice 30일의 100토큰 추가 생성 결과와 기존 일정 0의 전체 상태 보존을 검증한다.
     function _assertAdditionalScheduleCreated() internal view {
         assertEq(abi.encode(vesting.getSchedule(0)), abi.encode(_expectedSchedule(0, false, 0)));
         assertEq(vesting.releasableAmount(0), 300 ether);
@@ -273,6 +286,7 @@ contract VestingReentrancyTest is Test {
         assertEq(abi.encode(vesting.getSchedule(1)), abi.encode(expected));
     }
 
+    /// @notice 정상 예치 후 40일에 400을 청구하고 60일 취소 직전의 상태를 준비한다.
     function _prepareRevocation() internal {
         _prepareSchedule(false);
         _moveToDay(40);
@@ -283,6 +297,8 @@ contract VestingReentrancyTest is Test {
         _moveToDay(60);
     }
 
+    /// @notice 60일 취소의 반환 400·미수령 200과 100일 후 최종 청구·중복 거절을 검증한다.
+    /// @dev 검증 중 콜백을 끄고 시간을 이동한다. actor 잔고에는 청구액과 반환액이 함께 포함된다.
     function _assertRevocationAndFinalClaim() internal {
         assertEq(block.timestamp, uint256(START_TIME) + 60 days);
         uint64 revokedAt = uint64(uint256(START_TIME) + 60 days);
@@ -307,6 +323,7 @@ contract VestingReentrancyTest is Test {
         _assertDuplicateClaimRejected();
     }
 
+    /// @notice 같은 시점의 추가 청구가 NothingToClaim으로 거절되고 snapshot이 보존되는지 확인한다.
     function _assertDuplicateClaimRejected() internal {
         StateSnapshot memory beforeState = _snapshot();
         vm.expectRevert(Vesting.NothingToClaim.selector);
@@ -314,11 +331,14 @@ contract VestingReentrancyTest is Test {
         _assertStatePreserved(beforeState);
     }
 
+    /// @notice 지정한 미생성 ID의 조회가 정확한 ScheduleNotFound 오류로 거절되는지 확인한다.
+    /// @param id 존재하지 않아야 하는 일정 ID.
     function _assertScheduleMissing(uint256 id) internal {
         vm.expectRevert(abi.encodeWithSelector(Vesting.ScheduleNotFound.selector, id));
         vesting.getSchedule(id);
     }
 
+    /// @notice 콜백을 끈 재시도에서 토큰·actor의 콜백 횟수와 중첩 오류 기록이 생기지 않았는지 확인한다.
     function _assertRetryDidNotCallBack() internal view {
         assertFalse(token.callbackEnabled());
         assertFalse(token.inCallback());
@@ -327,6 +347,11 @@ contract VestingReentrancyTest is Test {
         assertEq(actor.getCallbackRecord().nestedResult.length, 0);
     }
 
+    /// @notice 운영 조회 함수를 사용하지 않고 일정 0의 고정 조건으로 기대 구조체를 만든다.
+    /// @param claimed 기대하는 누적 청구액의 최소 단위.
+    /// @param revoked 기대하는 취소 여부.
+    /// @param revokedAt 기대하는 취소 시각. 미취소면 0.
+    /// @return 고정된 제공자·수령자·금액·기간과 위 기대 상태를 가진 일정.
     function _expectedSchedule(uint256 claimed, bool revoked, uint64 revokedAt)
         internal
         view
@@ -345,6 +370,9 @@ contract VestingReentrancyTest is Test {
         });
     }
 
+    /// @notice 일정 0·자금·권한과 토큰/actor의 설정·관찰 기록을 실패 전후 비교용으로 저장한다.
+    /// @dev 여러 일정 전체를 수집하는 일반 snapshot이 아니라 이번 실패 시나리오의 상태 묶음이다.
+    /// @return state 비교할 현재 상태의 메모리 복사본.
     function _snapshot() internal view returns (StateSnapshot memory state) {
         // 모든 실패 직전에는 기존 일정이 일정 0 하나뿐이다.
         state.schedule = vesting.getSchedule(0);
@@ -366,6 +394,8 @@ contract VestingReentrancyTest is Test {
         );
     }
 
+    /// @notice 현재 snapshot의 모든 필드를 이전 값과 비교하여 실패 후 변경이 남지 않았는지 확인한다.
+    /// @param beforeState 실패할 호출 직전에 저장한 상태.
     function _assertStatePreserved(StateSnapshot memory beforeState) internal view {
         StateSnapshot memory afterState = _snapshot();
         assertEq(abi.encode(afterState.schedule), abi.encode(beforeState.schedule));
@@ -379,6 +409,8 @@ contract VestingReentrancyTest is Test {
         assertEq(afterState.actorState, beforeState.actorState);
     }
 
+    /// @notice actor에게 토큰을 발행·승인하고 일정 0에 1000을 예치한 뒤 모든 준비 조건을 확인한다.
+    /// @param reserveForCreation true이면 추가 생성용 잔고와 유한 승인량 100을 남긴다.
     function _prepareSchedule(bool reserveForCreation) internal {
         uint256 amount = reserveForCreation ? 1_100 ether : TOTAL_AMOUNT;
         token.mint(address(actor), amount);
@@ -405,10 +437,15 @@ contract VestingReentrancyTest is Test {
         assertEq(actor.getCallbackRecord().attempts, 0);
     }
 
+    /// @notice actor가 현재 시각 시작·cliff 20일·기간 100일의 자기 수령 일정을 생성하게 한다.
+    /// @param amount 예치할 토큰 수량의 최소 단위.
+    /// @return 생성된 일정 ID.
     function _createSchedule(uint256 amount) internal returns (uint256) {
         return actor.createSchedule(amount, 0, CLIFF_DURATION, DURATION);
     }
 
+    /// @notice 테스트의 블록 시각을 일정 0의 시작일부터 지정한 일수 뒤로 설정한다.
+    /// @param day 시작 시각으로부터의 경과 일수.
     function _moveToDay(uint256 day) internal {
         vm.warp(uint256(START_TIME) + day * 1 days);
     }
