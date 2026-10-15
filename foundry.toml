@@ -7,4 +7,11 @@ libs = ["lib"]
 # 로컬과 ci 프로필이 함수당 같은 기본 실행량을 사용하도록 명시한다.
 runs = 256
 
+[profile.default.invariant]
+# 예상 밖 실패를 숨기지 않고 행동 선택과 실제 성공·건너뜀을 구분해 확인한다.
+runs = 128
+depth = 64
+fail_on_revert = true
+show_metrics = true
+
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
