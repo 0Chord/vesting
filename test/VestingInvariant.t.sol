@@ -420,7 +420,7 @@ abstract contract VestingInvariantFixture is Test {
     function afterInvariant() public view {
         handler.assertModel();
         console2.log("RUN_METRICS_BEGIN");
-        uint256 count = handler.allowDirectDeposits() ? 8 : 7;
+        uint256 count = handler.ALLOW_DIRECT_DEPOSITS() ? 8 : 7;
         for (uint256 i; i < count; ++i) {
             (uint256 attempts, uint256 succeeded, uint256 rejected, uint256 skipped) =
                 handler.actionStats(VestingHandler.Action(i));

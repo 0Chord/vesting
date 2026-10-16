@@ -9,6 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {Vesting} from "../src/Vesting.sol";
 import {MockERC20} from "../test/mocks/MockERC20.sol";
 
+/// @dev 파일 접근은 foundry.toml의 cache/local-vesting 권한 안에서만 허용한다.
 /// @notice 로컬 RPC 결과·약정·자금을 Foundry로 검사한다. broadcast하지 않는 검증용 스크립트다.
 contract CheckLocal is Test {
     uint256 internal constant TOTAL = 1000 ether;
@@ -43,15 +44,21 @@ contract CheckLocal is Test {
     /// @param dir 이 실행의 cache/local-vesting 하위 경로다.
     function accounts(string memory dir) public {
         assertEq(block.chainid, 31337, "local chain");
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         address[] memory pool = vm.parseJsonAddressArray(vm.readFile(string.concat(dir, "/accounts-rpc.log")), "$");
         assertGe(pool.length, 2);
         assertTrue(pool[0] != address(0) && pool[1] != address(0) && pool[0] != pool[1]);
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory info = vm.readFile(string.concat(dir, "/node-info.log"));
         assertEq(vm.parseJson(info, ".forkConfig.forkUrl"), abi.encode(bytes32(0)));
         Context memory c;
         c.provider = pool[0];
         c.beneficiary = pool[1];
         _write(dir, c);
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/roles.abi"), vm.toString(abi.encode(pool[0], pool[1])));
     }
 
@@ -59,13 +66,19 @@ contract CheckLocal is Test {
     /// @param dir 이 실행만의 broadcast 경로다.
     function deployment(string memory dir) public {
         Context memory c = _context(dir);
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory json = vm.readFile(string.concat(dir, "/broadcast/DeployLocal.s.sol/31337/run-latest.json"));
         bytes32 first = vm.parseJsonBytes32(json, ".transactions[0].hash");
         bytes32 second = vm.parseJsonBytes32(json, ".transactions[1].hash");
         c.token = MockERC20(vm.parseJsonAddress(json, ".transactions[0].contractAddress"));
         c.vesting = Vesting(vm.parseJsonAddress(json, ".transactions[1].contractAddress"));
         _write(dir, c);
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/deployment-hashes.abi"), vm.toString(abi.encode(first, second)));
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(
             string.concat(dir, "/addresses.abi"), vm.toString(abi.encode(address(c.token), address(c.vesting)))
         );
@@ -75,6 +88,8 @@ contract CheckLocal is Test {
     /// @param dir 실행별 broadcast와 context가 있는 경로다.
     function prepare(string memory dir) public {
         Context memory c = _context(dir);
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory json = vm.readFile(string.concat(dir, "/broadcast/DeployLocal.s.sol/31337/run-latest.json"));
         assertFalse(vm.keyExistsJson(json, ".transactions[2]"), "exactly two deployments");
         address[2] memory deployed;
@@ -83,6 +98,8 @@ contract CheckLocal is Test {
             assertEq(vm.parseJsonString(json, string.concat(key, ".contractName")), i == 0 ? "MockERC20" : "Vesting");
             assertEq(vm.parseJsonString(json, string.concat(key, ".transactionType")), "CREATE");
             bytes32 hash = vm.parseJsonBytes32(json, string.concat(key, ".hash"));
+            // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+            // forge-lint: disable-next-line(unsafe-cheatcode)
             string memory receipt = vm.readFile(string.concat(dir, "/deployment-", vm.toString(i), ".log"));
             assertEq(vm.parseJsonBytes32(receipt, ".transactionHash"), hash);
             assertEq(vm.parseJsonUint(receipt, ".status"), 1);
@@ -97,6 +114,8 @@ contract CheckLocal is Test {
                 vm.serializeUint("deployment-time", "timestamp", timestamp),
                 string.concat(dir, "/deployment-time-", vm.toString(i), ".json")
             );
+            // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+            // forge-lint: disable-next-line(unsafe-cheatcode)
             vm.writeFile(string.concat(dir, "/deployment-", vm.toString(i), ".json"), receipt);
         }
         c.token = MockERC20(deployed[0]);
@@ -106,6 +125,8 @@ contract CheckLocal is Test {
         assertEq(c.token.totalSupply(), 0);
         assertEq(c.vesting.nextScheduleId(), 0);
         _write(dir, c);
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/addresses.abi"), vm.toString(abi.encode(deployed[0], deployed[1])));
     }
 
@@ -113,6 +134,8 @@ contract CheckLocal is Test {
     /// @param dir 실행별 기록 경로다.
     /// @param action 다음 거래의 행동 번호다. 기록을 덮어쓰지 않고 전후 상태를 연결한다.
     function snapshot(string memory dir, Action action) public {
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/before.hash"), vm.toString(keccak256(_state(_context(dir)))));
         _recordState(dir, string.concat("before-", vm.toString(uint256(action))), _context(dir));
     }
@@ -141,12 +164,16 @@ contract CheckLocal is Test {
                 assertEq(c.id, 0, "fresh schedule id");
                 c.start = timestamp;
                 _write(dir, c);
+                // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+                // forge-lint: disable-next-line(unsafe-cheatcode)
                 vm.writeFile(string.concat(dir, "/start.abi"), vm.toString(abi.encode(timestamp)));
             }
             _events(c, action, receipt);
         }
         _assertState(c, _phase(action));
         _recordState(dir, string.concat("after-", vm.toString(uint256(action))), c);
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/receipt-", vm.toString(uint256(action)), ".json"), receipt);
     }
 
@@ -156,11 +183,15 @@ contract CheckLocal is Test {
         returns (bytes memory)
     {
         (address sender, address to, bytes memory input, bytes memory error) = _request(c, action);
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory txJson = vm.readFile(string.concat(dir, "/tx-", vm.toString(uint256(action)), ".log"));
         assertEq(vm.parseJsonBytes32(txJson, ".hash"), hash);
         assertEq(vm.parseJsonAddress(txJson, ".from"), sender);
         assertEq(vm.parseJsonAddress(txJson, ".to"), to);
         assertEq(vm.parseJsonBytes(txJson, ".input"), input);
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/transaction-", vm.toString(uint256(action)), ".json"), txJson);
         return error;
     }
@@ -169,15 +200,21 @@ contract CheckLocal is Test {
     function _failure(string memory dir, Context memory c, Action action, string memory receipt, bytes memory error)
         internal
     {
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory trace = vm.readFile(string.concat(dir, "/trace-rpc-", vm.toString(uint256(action)), ".log"));
         assertGt(bytes(vm.parseJsonString(trace, ".error")).length, 0);
         assertEq(vm.parseJsonBytes(trace, ".output"), error, "exact transaction revert data");
         assertFalse(vm.keyExistsJson(receipt, ".logs[0]"));
         assertEq(
             keccak256(_state(c)),
+            // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+            // forge-lint: disable-next-line(unsafe-cheatcode)
             vm.parseBytes32(vm.readFile(string.concat(dir, "/before.hash"))),
             "failed transaction preserves state"
         );
+        // 로컬 실행의 검증 결과를 보관한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         vm.writeFile(string.concat(dir, "/trace-", vm.toString(uint256(action)), ".json"), trace);
     }
 
@@ -357,6 +394,8 @@ contract CheckLocal is Test {
 
     /// @notice Cast가 읽은 receipt의 hash를 실제 전송 hash와 대조한다. 누락은 실패다.
     function _receipt(string memory dir, Action action, bytes32 hash) internal view returns (string memory json) {
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         json = vm.readFile(string.concat(dir, "/mined-", vm.toString(uint256(action)), ".log"));
         assertEq(vm.parseJsonBytes32(json, ".transactionHash"), hash);
     }
@@ -372,6 +411,8 @@ contract CheckLocal is Test {
         view
         returns (uint256)
     {
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory json = vm.readFile(string.concat(dir, "/block-", label, ".log"));
         assertEq(vm.parseJsonBytes32(json, ".hash"), vm.parseJsonBytes32(receipt, ".blockHash"));
         assertEq(vm.parseJsonUint(json, ".number"), vm.parseJsonUint(receipt, ".blockNumber"));
@@ -427,8 +468,10 @@ contract CheckLocal is Test {
         vm.serializeUint(key, string.concat(field, "Raw"), value);
         bytes memory fraction = bytes(vm.toString(value % 1 ether));
         bytes memory padded = new bytes(18);
+        // ASCII 문자 '0'의 한 바이트 값이다. 문자열을 잘라 변환하지 않고 사용한다.
+        bytes1 zero = hex"30";
         for (uint256 i; i < 18; ++i) {
-            padded[i] = i < 18 - fraction.length ? bytes1("0") : fraction[i - (18 - fraction.length)];
+            padded[i] = i < 18 - fraction.length ? zero : fraction[i - (18 - fraction.length)];
         }
         string memory display = string.concat(vm.toString(value / 1 ether), ".", string(padded));
         vm.serializeString(key, string.concat(field, "Tokens"), display);
@@ -437,6 +480,8 @@ contract CheckLocal is Test {
 
     /// @notice 같은 실행의 구조화된 context를 읽는다.
     function _context(string memory dir) internal view returns (Context memory c) {
+        // 로컬 실행 기록을 읽어 실제 RPC 결과와 대조한다. 접근은 cache/local-vesting 안으로 제한된다.
+        // forge-lint: disable-next-line(unsafe-cheatcode)
         string memory json = vm.readFile(string.concat(dir, "/context.json"));
         c.provider = vm.parseJsonAddress(json, ".provider");
         c.beneficiary = vm.parseJsonAddress(json, ".beneficiary");
