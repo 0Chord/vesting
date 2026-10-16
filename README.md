@@ -11,14 +11,14 @@
 
 개인 학습 프로젝트로 계약과 테스트를 직접 작성했습니다. Solidity로 시간·권한·금액 처리 규칙을 표현하고, Foundry에서 시간을 바꿔 가며 경계 조건을 확인하는 데 집중했습니다.
 
-[동작 예시](#동작-예시) · [설계와 구현](#설계와-구현) · [실행하기](#실행하기) · [로컬 배포와 호출](#로컬-배포와-호출) · [테스트](#테스트) · [코드 안내](#코드-안내)
+[동작 예시](#동작-예시) · [설계와 구현](#설계와-구현) · [실행하기](#실행하기) · [로컬 배포와 호출](#로컬-배포와-호출) · [Sepolia 배포](#sepolia-배포) · [테스트](#테스트) · [코드 안내](#코드-안내)
 
 | 구분 | 내용 |
 | --- | --- |
 | 구현 기간 | 2026.08 — 계약 구현 및 단위 테스트 작성 |
 | 사용 기술 | Solidity · Foundry · OpenZeppelin · GitHub Actions |
 | 구현 범위 | 단일 ERC-20 토큰, 여러 지급 일정, 선형 지급, cliff, 청구, 취소·반환 |
-| 현재 상태 | 계약·실패/재진입/fuzz/invariant 검증·Anvil 로컬 배포/호출 예제. 프런트엔드·공개 체인 배포는 미포함 |
+| 현재 상태 | 계약·실패/재진입/fuzz/invariant 검증·Anvil 로컬 배포/호출 예제·Sepolia 두 계약 배포 및 Etherscan 소스 검증 완료 |
 
 ## 지급 흐름
 
@@ -118,7 +118,7 @@ Forge 테스트는 로컬 EVM에서 실행됩니다. 별도 RPC 주소, 지갑 �
 
 [학습 #10](https://github.com/0Chord/vesting/issues/10)은 제공자 P와 수령자 B를 서로 다른 로컬 계정으로 두고 실제 거래를 보냅니다. P는 관리자이자 최초 자금 제공자입니다. **제공자 잔고는 P가 가진 ERC-20 토큰 수, Vesting 잔고는 계약 주소에 예치된 같은 토큰 수**입니다. 가스비에 쓰는 ETH와 구분합니다.
 
-실행 도구는 **Solidity·Forge·Anvil·Cast·Bash**입니다. Git과 기본 셸 유틸리티를 사용하며 별도 언어나 JSON 처리 패키지를 설치하지 않습니다. Foundry 1.5.1-stable에서 실행합니다.
+실행 도구는 **Solidity·Forge·Anvil·Cast·Bash**입니다. Git과 기본 셸 유틸리티를 사용하며 별도 언어나 JSON 처리 패키지를 설치하지 않습니다. 이 로컬 예제는 Foundry 1.5.1-stable에서 검증했습니다. Sepolia의 MetaMask 배포에는 아래 안내의 v1.7.0을 사용했습니다.
 
 ```bash
 # 먼저 배포·승인·생성까지만 확인
@@ -203,6 +203,19 @@ cast call "$LOCAL_TOKEN" 'allowance(address,address)(uint256)' "$LOCAL_PROVIDER"
 
 </details>
 
+## Sepolia 배포
+
+2026-10-16에 MetaMask로 각각 서명하여 시험용 토큰과 Vesting을 Sepolia(chain ID `11155111`)에 배포했습니다. 두 계약 모두 Etherscan에서 `Pass - Verified`를 확인했습니다.
+
+| 계약 | 주소·공개 소스 |
+| --- | --- |
+| MockERC20 (MTK) | [0x7e61a37fce010ad620b052273d23efe5dc94bba8](https://sepolia.etherscan.io/address/0x7e61a37fce010ad620b052273d23efe5dc94bba8#code) |
+| Vesting | [0xa7894b86bdd8851303212c2fccc24d03fd34baff](https://sepolia.etherscan.io/address/0xa7894b86bdd8851303212c2fccc24d03fd34baff#code) |
+
+Vesting 배포 블록에서 관리자·연결 토큰을 대조하고 공급량·제공자/계약의 토큰 잔고·일정 수가 모두 0임을 확인했습니다. 토큰 발행·승인·일정 생성·청구·취소의 Sepolia 실행은 후속 범위입니다. MTK는 누구나 발행할 수 있는 시험용 토큰이며 소스 검증은 외부 보안 감사를 뜻하지 않습니다.
+
+[단계별 실행 안내](docs/sepolia-deployment.md)에서 기존 계약 조회, 새 배포, 소스 검증과 실패 후 재개를 따라갈 수 있습니다. [배포 기록](deployments/sepolia.json)에는 실제 거래·블록·시각·소스 커밋·컴파일 설정을 보관합니다.
+
 ## 테스트
 
 Foundry 테스트에서는 `vm.warp`로 시간을 이동하고 `vm.prank`로 호출자를 바꿔 계약 상태와 토큰 잔고를 확인합니다. 테스트별 책임은 다음과 같습니다.
@@ -245,6 +258,8 @@ src/Vesting.sol              # 실제 일정 생성·청구·취소
 script/DeployLocal.s.sol      # 로컬 토큰·Vesting 배포
 script/local-vesting-flow.sh  # 로컬 실행 진입점
 script/CheckLocal.s.sol       # JSON·receipt·trace·약정/자금·고정블록 시뮬레이션 검사
+docs/sepolia-deployment.md   # MetaMask 직접 서명 배포·조회·소스 검증 안내
+deployments/sepolia.json     # 실제 Sepolia 주소·거래·빌드 설정·확인 결과
 test/Vesting*.t.sol           # 정상·실패·토큰·재진입·fuzz·invariant
 test/LocalVestingFlow.t.sol   # 배포 도구의 빠른 검사
 test/local-vesting-cleanup.sh # 정리 중 신호 회귀 (Bash)
@@ -273,4 +288,4 @@ foundry.toml                # fuzz256·invariant128×64 설정
 
 ## 다음 작업
 
-기존 검증과 로컬 실행 결과를 코드·거래 경계에 연결해 설명하고 직접 재현하는 학습을 이어갑니다. 이후 새 기능·프런트엔드·공개 네트워크 배포는 별도로 범위를 정합니다. 현재 저장소는 학습용 구현이며 외부 보안 감사를 받은 계약은 아닙니다.
+배포한 Sepolia 계약에서 토큰 발행 → 승인 → 짧은 일정 생성 → 청구·취소를 직접 실행하는 단위를 다음으로 설계합니다. 새 기능·프런트엔드는 별도로 범위를 정합니다. 기존 검증과 실제 거래를 코드·거래 경계에 연결해 설명하는 학습을 이어갑니다.
