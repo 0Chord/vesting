@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "network": {
+    "name": "sepolia",
+    "chainId": 11155111
+  },
+  "source": {
+    "repository": "https://github.com/0Chord/vesting",
+    "commit": "dad06fc1e6a031f3ab7fcd9e53c635620822d7e9",
+    "commitUrl": "https://github.com/0Chord/vesting/commit/dad06fc1e6a031f3ab7fcd9e53c635620822d7e9"
+  },
+  "toolchain": {
+    "foundry": {
+      "release": "v1.7.0",
+      "reportedForgeVersion": "1.6.0-v1.7.0",
+      "commit": "f83bad912a9dba7bf0371def1e70bb1896048356"
+    },
+    "solc": "0.8.33+commit.64118f21",
+    "evmVersion": "prague",
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "viaIR": false,
+    "metadata": {
+      "bytecodeHash": "ipfs"
+    },
+    "dependencies": {
+      "forge-std": {
+        "version": "1.16.2",
+        "revision": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b"
+      },
+      "openzeppelin-contracts": {
+        "version": "5.6.1",
+        "revision": "5fd1781b1454fd1ef8e722282f86f9293cacf256"
+      }
+    }
+  },
+  "contracts": {
+    "token": {
+      "contract": "test/mocks/MockERC20.sol:MockERC20",
+      "address": "0x7e61a37fce010ad620b052273d23efe5dc94bba8",
+      "deployer": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "constructorArguments": [],
+      "transactionHash": "0x0c45731bc7c5d8b15bde1b07caff30982cb456c5508eb0c2a9650101072192b1",
+      "receipt": {
+        "status": 1,
+        "blockNumber": 11927046,
+        "blockHash": "0xb2c88f388d829b485a8e323734720d5f8573cca817713e81c6ecf750e6df3581",
+        "blockTimestamp": 1792150020,
+        "blockTimeUtc": "2026-10-16T11:27:00.000Z"
+      },
+      "runtimeCodeBytes": 3734,
+      "verification": {
+        "provider": "etherscan",
+        "status": "Pass - Verified",
+        "confirmedAt": "2026-10-16T11:40:11.532Z",
+        "sourceUrl": "https://sepolia.etherscan.io/address/0x7e61a37fce010ad620b052273d23efe5dc94bba8#code"
+      },
+      "explorerUrl": "https://sepolia.etherscan.io/address/0x7e61a37fce010ad620b052273d23efe5dc94bba8",
+      "transactionUrl": "https://sepolia.etherscan.io/tx/0x0c45731bc7c5d8b15bde1b07caff30982cb456c5508eb0c2a9650101072192b1",
+      "tokenMetadata": {
+        "name": "Mock Token",
+        "symbol": "MTK",
+        "decimals": 18
+      }
+    },
+    "vesting": {
+      "contract": "src/Vesting.sol:Vesting",
+      "address": "0xa7894b86bdd8851303212c2fccc24d03fd34baff",
+      "deployer": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "constructorArguments": [
+        "0x7e61a37fce010ad620b052273d23efe5dc94bba8",
+        "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e"
+      ],
+      "transactionHash": "0x24bf153a70c4e1d65a7110d6ac059876ee6cb9a38eeef8302d3189840b1aa2a2",
+      "receipt": {
+        "status": 1,
+        "blockNumber": 11927056,
+        "blockHash": "0x0777914e9e473b99ae599781b2b5e127385dc2107c9d915d0e564ab0e1b1180d",
+        "blockTimestamp": 1792150164,
+        "blockTimeUtc": "2026-10-16T11:29:24.000Z"
+      },
+      "runtimeCodeBytes": 7184,
+      "verification": {
+        "provider": "etherscan",
+        "status": "Pass - Verified",
+        "confirmedAt": "2026-10-16T11:40:11.532Z",
+        "sourceUrl": "https://sepolia.etherscan.io/address/0xa7894b86bdd8851303212c2fccc24d03fd34baff#code"
+      },
+      "explorerUrl": "https://sepolia.etherscan.io/address/0xa7894b86bdd8851303212c2fccc24d03fd34baff",
+      "transactionUrl": "https://sepolia.etherscan.io/tx/0x24bf153a70c4e1d65a7110d6ac059876ee6cb9a38eeef8302d3189840b1aa2a2"
+    }
+  },
+  "initialState": {
+    "observedAt": "2026-10-16T11:42:05.446Z",
+    "blockNumber": 11927056,
+    "blockHash": "0x0777914e9e473b99ae599781b2b5e127385dc2107c9d915d0e564ab0e1b1180d",
+    "values": {
+      "owner": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "token": "0x7e61a37fce010ad620b052273d23efe5dc94bba8",
+      "nextScheduleId": "0",
+      "tokenTotalSupply": "0",
+      "providerTokenBalance": "0",
+      "vestingTokenBalance": "0"
+    }
+  },
+  "validation": {
+    "transactionCreationInputsMatchLocalArtifacts": true,
+    "runtimeCodeMatchesLocalArtifactsWithTokenImmutable": true
+  },
+  "scope": {
+    "completed": [
+      "deployment",
+      "initial-state-check",
+      "etherscan-source-verification"
+    ],
+    "notPerformed": [
+      "mint",
+      "approve",
+      "createSchedule",
+      "claim",
+      "revoke"
+    ]
+  }
+}
