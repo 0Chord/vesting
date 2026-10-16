@@ -2,6 +2,7 @@
 pragma solidity ^0.8.24;
 
 import {Test} from "forge-std/Test.sol";
+import {SafeCast} from "@openzeppelin/contracts/utils/math/SafeCast.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {Vesting} from "../src/Vesting.sol";
@@ -44,7 +45,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 10 최소 단위를 3초 동안 지급하면 차례로 3·3·4를 받아 나머지도 남지 않는다.
     function test_RoundingClaimsThreeThreeFour() public {
-        _createSchedule(Terms(10, START_TIME, 0, 3));
+        _createSchedule(Terms({totalAmount: 10, startTime: START_TIME, cliffDuration: 0, duration: 3}));
 
         _claimAt(START_TIME + 1, 3);
         _claimAt(START_TIME + 2, 6);
@@ -56,7 +57,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 2초에 스케줄을 취소하면 제공자에게 4를 반환하고 수령자는 나중에 3만 더 받는다.
     function test_RevokeAtTwoSecondsFreezesSixUnits() public {
-        _createSchedule(Terms(10, START_TIME, 0, 3));
+        _createSchedule(Terms({totalAmount: 10, startTime: START_TIME, cliffDuration: 0, duration: 3}));
         _claimAt(START_TIME + 1, 3);
 
         _revokeAt(START_TIME + 2, 6);
@@ -71,7 +72,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 미래에 시작하는 cliff 0 일정도 시작 직전·정각에는 0이고 1초 뒤부터 증가한다.
     function test_FutureStartWithZeroCliff() public {
-        _createSchedule(Terms(100, START_TIME, 0, 10));
+        _createSchedule(Terms({totalAmount: 100, startTime: START_TIME, cliffDuration: 0, duration: 10}));
 
         _claimAt(START_TIME - 1, 0);
         _claimAt(START_TIME, 0);
@@ -80,7 +81,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice cliff가 기간과 같으면 종료 직전까지 0이고 종료 정각부터 총량이 확정된다.
     function test_CliffEqualToDurationUnlocksAtEnd() public {
-        _createSchedule(Terms(10, START_TIME, 3, 3));
+        _createSchedule(Terms({totalAmount: 10, startTime: START_TIME, cliffDuration: 3, duration: 3}));
 
         _claimAt(START_TIME + 2, 0);
         _claimAt(START_TIME + 3, 10);
@@ -92,7 +93,7 @@ contract VestingFuzzTest is Test {
     function test_LargeAmountClaimsExactHalves() public {
         uint256 total = uint256(1) << 255;
         uint256 half = uint256(1) << 254;
-        _createSchedule(Terms(total, START_TIME, 0, 4));
+        _createSchedule(Terms({totalAmount: total, startTime: START_TIME, cliffDuration: 0, duration: 4}));
 
         _claimAt(START_TIME + 2, half);
         _claimAt(START_TIME + 4, total);
@@ -103,7 +104,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 총량 1은 1·2초에 내림되어 청구가 거절돼도 종료 시 온전히 받을 수 있다.
     function test_ZeroRoundedClaimsDoNotLoseFinalUnit() public {
-        _createSchedule(Terms(1, START_TIME, 0, 3));
+        _createSchedule(Terms({totalAmount: 1, startTime: START_TIME, cliffDuration: 0, duration: 3}));
 
         _claimAt(START_TIME + 1, 0);
         _claimAt(START_TIME + 2, 0);
@@ -112,7 +113,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 종료 시 취소는 반환액 0으로 거절되며 이미 받은 3 외에 7을 정상 청구한다.
     function test_RevokeAtEndRejectsButRemainingSevenCanBeClaimed() public {
-        _createSchedule(Terms(10, START_TIME, 0, 3));
+        _createSchedule(Terms({totalAmount: 10, startTime: START_TIME, cliffDuration: 0, duration: 3}));
         _claimAt(START_TIME + 1, 3);
 
         _revokeAt(START_TIME + 3, 10);
@@ -124,7 +125,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 시작 전 취소는 전액을 반환하며 원래 종료 시점이 지나도 수령자 몫이 생기지 않는다.
     function test_RevokeBeforeStartRefundsEverything() public {
-        _createSchedule(Terms(10, START_TIME, 0, 3));
+        _createSchedule(Terms({totalAmount: 10, startTime: START_TIME, cliffDuration: 0, duration: 3}));
 
         _revokeAt(START_TIME - 1, 0);
         _claimAt(START_TIME + 3, 0);
@@ -134,7 +135,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice 시작 후라도 cliff 직전에 취소하면 누적 몫은 0으로 고정되고 전액 반환된다.
     function test_RevokeBeforeCliffRefundsEverything() public {
-        _createSchedule(Terms(100, START_TIME, 4, 10));
+        _createSchedule(Terms({totalAmount: 100, startTime: START_TIME, cliffDuration: 4, duration: 10}));
 
         _revokeAt(START_TIME + 3, 0);
         _claimAt(START_TIME + 10, 0);
@@ -144,7 +145,7 @@ contract VestingFuzzTest is Test {
 
     /// @notice cliff 정각 취소는 cliff부터가 아니라 시작일부터 쌓인 몫 40을 보존한다.
     function test_RevokeAtCliffPreservesAccruedAmount() public {
-        _createSchedule(Terms(100, START_TIME, 4, 10));
+        _createSchedule(Terms({totalAmount: 100, startTime: START_TIME, cliffDuration: 4, duration: 10}));
         _claimAt(START_TIME + 3, 0);
 
         _revokeAt(START_TIME + 4, 40);
@@ -219,7 +220,7 @@ contract VestingFuzzTest is Test {
     /// @param caller 관리자·수령자를 제외하고 그대로 사용하는 임의 호출자다.
     function testFuzz_UnauthorizedCallsPreserveState(address caller) public {
         vm.assume(caller != owner && caller != beneficiary);
-        _createSchedule(Terms(1_000, START_TIME, 0, 100));
+        _createSchedule(Terms({totalAmount: 1_000, startTime: START_TIME, cliffDuration: 0, duration: 100}));
         vm.warp(START_TIME + 30);
         _assertState(300);
         uint256 callerBalance = token.balanceOf(caller);
@@ -246,7 +247,13 @@ contract VestingFuzzTest is Test {
         uint256 cliff = bound(raw[3], 0, duration);
         assertLe(start + 2 * duration + 1, type(uint64).max, "bounded timestamps fit uint64");
 
-        input = Terms(bound(raw[0], 1, MAX_AMOUNT), uint64(start), uint64(cliff), uint64(duration));
+        // 좁은 타입으로 바꿀 때 범위를 다시 검사하여 초과 값이 조용히 잘리는 것을 막는다.
+        input = Terms({
+            totalAmount: bound(raw[0], 1, MAX_AMOUNT),
+            startTime: SafeCast.toUint64(start),
+            cliffDuration: SafeCast.toUint64(cliff),
+            duration: SafeCast.toUint64(duration)
+        });
     }
 
     /// @notice 시작 직전부터 종료 이후까지 시각 세 개를 뽑고 실제 시간이 뒤로 가지 않도록 정렬한다.
@@ -342,7 +349,7 @@ contract VestingFuzzTest is Test {
             vm.prank(owner);
             vesting.revoke(0);
             modelRevoked = true;
-            modelRevokedAt = uint64(timestamp);
+            modelRevokedAt = SafeCast.toUint64(timestamp);
             modelFrozenVested = expectedVested;
         }
 

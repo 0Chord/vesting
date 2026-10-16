@@ -55,12 +55,12 @@ contract VestingHandler is Test {
     /// @notice 직접 입금을 허용하지 않은 환경의 잘못된 호출을 실패로 드러낸다.
     error DirectDepositsDisabled();
 
-    MockERC20 public immutable token;
-    Vesting public immutable vesting;
-    bool public immutable allowDirectDeposits;
+    MockERC20 public immutable TOKEN;
+    Vesting public immutable VESTING;
+    bool public immutable ALLOW_DIRECT_DEPOSITS;
     address[3] public owners;
     address[3] public beneficiaries;
-    address public immutable donor;
+    address public immutable DONOR;
 
     address public expectedOwner;
     uint256 public expectedTime;
@@ -92,12 +92,12 @@ contract VestingHandler is Test {
         address donor_,
         bool directDeposits
     ) {
-        token = token_;
-        vesting = vesting_;
+        TOKEN = token_;
+        VESTING = vesting_;
         owners = ownerPool;
         beneficiaries = beneficiaryPool;
-        donor = donor_;
-        allowDirectDeposits = directDeposits;
+        DONOR = donor_;
+        ALLOW_DIRECT_DEPOSITS = directDeposits;
         expectedOwner = ownerPool[0];
         expectedTime = START;
         assertEq(block.timestamp, START, "fixture start");
@@ -160,7 +160,7 @@ contract VestingHandler is Test {
         Vesting.Schedule storage expected = expectedSchedules[id];
         uint256 amount = expectedVested(id) - expected.claimedAmount;
         vm.prank(expected.beneficiary);
-        uint256 received = vesting.claim(id);
+        uint256 received = VESTING.claim(id);
         assertEq(received, amount, "claim return must equal independent delta");
         expected.claimedAmount += amount;
         totalClaimed += amount;
@@ -183,7 +183,7 @@ contract VestingHandler is Test {
         uint256 vested = expectedVested(id);
         uint256 refund = expected.totalAmount - vested;
         vm.prank(expectedOwner);
-        vesting.revoke(id);
+        VESTING.revoke(id);
         expected.revoked = true;
         expected.revokedAt = SafeCast.toUint64(expectedTime);
         frozenVested[id] = vested;
@@ -200,7 +200,7 @@ contract VestingHandler is Test {
         uint256 index = bound(seed, 0, 2);
         if (owners[index] == expectedOwner) index = (index + 1) % 3;
         vm.prank(expectedOwner);
-        vesting.transferOwnership(owners[index]);
+        VESTING.transferOwnership(owners[index]);
         expectedOwner = owners[index];
         ++actionStats[Action.TransferOwnership].succeeded;
         assertModel();
@@ -242,14 +242,14 @@ contract VestingHandler is Test {
     /// @notice 약정 외 입금은 별도 계정의 실제 전송으로 만들며 E만 늘리고 기존 의무는 보존한다.
     /// @param rawAmount 1~10^30 최소 단위로 제한할 직접 입금액이다.
     function directDeposit(uint256 rawAmount) public {
-        if (!allowDirectDeposits) revert DirectDepositsDisabled();
+        if (!ALLOW_DIRECT_DEPOSITS) revert DirectDepositsDisabled();
         ++actionStats[Action.DirectDeposit].attempts;
         uint256 amount = bound(rawAmount, 1, MAX_AMOUNT);
-        _mintFor(donor, amount);
-        vm.prank(donor);
-        assertTrue(token.transfer(address(vesting), amount));
+        _mintFor(DONOR, amount);
+        vm.prank(DONOR);
+        assertTrue(TOKEN.transfer(address(VESTING), amount));
         totalDirectDeposits += amount;
-        flows[donor].donated += amount;
+        flows[DONOR].donated += amount;
         ++actionStats[Action.DirectDeposit].succeeded;
         assertModel();
     }
@@ -258,32 +258,32 @@ contract VestingHandler is Test {
     /// @dev 실제 반환값·Schedule을 기대값에 복사하지 않는다. getter는 무작위 호출 selector에서 제외한다.
     function assertModel() public view {
         assertEq(block.timestamp, expectedTime, "model time");
-        assertEq(vesting.owner(), expectedOwner, "current owner");
-        assertEq(address(vesting.TOKEN()), address(token));
-        assertEq(vesting.nextScheduleId(), expectedSchedules.length, "next id");
+        assertEq(VESTING.owner(), expectedOwner, "current owner");
+        assertEq(address(VESTING.TOKEN()), address(TOKEN));
+        assertEq(VESTING.nextScheduleId(), expectedSchedules.length, "next id");
         uint256 liabilities;
         for (uint256 id; id < expectedSchedules.length; ++id) {
             Vesting.Schedule memory expected = expectedSchedules[id];
-            assertEq(abi.encode(vesting.getSchedule(id)), abi.encode(expected), "all schedule fields");
+            assertEq(abi.encode(VESTING.getSchedule(id)), abi.encode(expected), "all schedule fields");
             uint256 vested = expectedVested(id);
             assertLe(expected.claimedAmount, vested);
             assertLe(vested, expected.totalAmount);
-            assertEq(vesting.vestedAmount(id), vested, "independent vested");
-            assertEq(vesting.releasableAmount(id), vested - expected.claimedAmount, "independent releasable");
+            assertEq(VESTING.vestedAmount(id), vested, "independent vested");
+            assertEq(VESTING.releasableAmount(id), vested - expected.claimedAmount, "independent releasable");
             liabilities += (expected.revoked ? frozenVested[id] : expected.totalAmount) - expected.claimedAmount;
         }
 
         assertEq(liabilities, totalDeposited - totalClaimed - totalRefunded, "obligation ledger");
-        assertEq(token.balanceOf(address(vesting)), liabilities + totalDirectDeposits, "assets and extra deposits");
-        if (!allowDirectDeposits) assertEq(totalDirectDeposits, 0, "pure environment");
+        assertEq(TOKEN.balanceOf(address(VESTING)), liabilities + totalDirectDeposits, "assets and extra deposits");
+        if (!ALLOW_DIRECT_DEPOSITS) assertEq(totalDirectDeposits, 0, "pure environment");
 
-        uint256 accountBalances = _assertAccount(donor);
+        uint256 accountBalances = _assertAccount(DONOR);
         for (uint256 i; i < 3; ++i) {
             accountBalances += _assertAccount(owners[i]) + _assertAccount(beneficiaries[i]);
-            assertEq(token.allowance(owners[i], address(vesting)), 0, "exact approvals consumed");
+            assertEq(TOKEN.allowance(owners[i], address(VESTING)), 0, "exact approvals consumed");
         }
-        assertEq(accountBalances + token.balanceOf(address(vesting)), totalMinted, "all holder balances");
-        assertEq(token.totalSupply(), totalMinted, "mint ledger");
+        assertEq(accountBalances + TOKEN.balanceOf(address(VESTING)), totalMinted, "all holder balances");
+        assertEq(TOKEN.totalSupply(), totalMinted, "mint ledger");
         _assertStats();
     }
 
@@ -327,8 +327,8 @@ contract VestingHandler is Test {
     function _create(address receiver, uint256 amount, uint64 start, uint64 cliff, uint64 duration) internal {
         _mintFor(expectedOwner, amount);
         vm.startPrank(expectedOwner);
-        token.approve(address(vesting), amount);
-        uint256 id = vesting.createSchedule(receiver, amount, start, cliff, duration);
+        TOKEN.approve(address(VESTING), amount);
+        uint256 id = VESTING.createSchedule(receiver, amount, start, cliff, duration);
         vm.stopPrank();
         assertEq(id, expectedSchedules.length, "returned schedule id");
         expectedSchedules.push(
@@ -353,7 +353,7 @@ contract VestingHandler is Test {
     /// @param account 자금을 받을 준비 계정이다. Vesting 자체에는 mint하지 않는다.
     /// @param amount 준비할 양수 금액이다.
     function _mintFor(address account, uint256 amount) internal {
-        token.mint(account, amount);
+        TOKEN.mint(account, amount);
         flows[account].minted += amount;
         totalMinted += amount;
     }
@@ -383,7 +383,7 @@ contract VestingHandler is Test {
     /// @param expectedError selector와 인자까지 포함한 기대 오류다.
     function _assertRejected(address caller, bytes memory payload, bytes memory expectedError) internal {
         vm.prank(caller);
-        (bool success, bytes memory result) = address(vesting).call(payload);
+        (bool success, bytes memory result) = address(VESTING).call(payload);
         assertFalse(success, "unauthorized call succeeded");
         assertEq(result, expectedError, "exact authorization error");
     }
@@ -403,7 +403,7 @@ contract VestingHandler is Test {
     function _assertAccount(address account) internal view returns (uint256 expectedBalance) {
         AccountFlow memory flow = flows[account];
         expectedBalance = flow.minted - flow.deposited - flow.donated + flow.claimed + flow.refunded;
-        assertEq(token.balanceOf(account), expectedBalance, "account flow ledger");
+        assertEq(TOKEN.balanceOf(account), expectedBalance, "account flow ledger");
     }
 
     /// @notice 선택 횟수가 실제 성공·확인된 거절·건너뜀으로 분해되며 사유별 합도 맞는지 확인한다.
@@ -427,7 +427,7 @@ contract VestingHandler is Test {
     /// @notice 계정별 자금 합산이 명확하도록 준비한 일곱 계정이 모두 비영·서로 다름을 확인한다.
     function _assertDistinctAccounts() internal view {
         address[7] memory accounts =
-            [owners[0], owners[1], owners[2], beneficiaries[0], beneficiaries[1], beneficiaries[2], donor];
+            [owners[0], owners[1], owners[2], beneficiaries[0], beneficiaries[1], beneficiaries[2], DONOR];
         for (uint256 i; i < accounts.length; ++i) {
             assertTrue(accounts[i] != address(0));
             for (uint256 j; j < i; ++j) {
