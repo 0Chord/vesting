@@ -2,6 +2,8 @@
 src = "src"
 out = "out"
 libs = ["lib"]
+# 로컬 검증 스크립트의 실행별 기록만 읽고 쓸 수 있다.
+fs_permissions = [{ access = "read-write", path = "./cache/local-vesting" }]
 
 [profile.default.fuzz]
 # 로컬과 ci 프로필이 함수당 같은 기본 실행량을 사용하도록 명시한다.
