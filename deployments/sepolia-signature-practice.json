@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "network": {
+    "name": "sepolia",
+    "chainId": 11155111
+  },
+  "source": {
+    "repository": "https://github.com/0Chord/vesting",
+    "contractCommit": "b69f87f65be53c36c2ecb1ff73ea9c9a20493f6e"
+  },
+  "toolchain": {
+    "foundryRelease": "v1.7.0",
+    "reportedVersion": "1.6.0-v1.7.0",
+    "solc": "0.8.33+commit.64118f21",
+    "evmVersion": "prague",
+    "optimizer": {
+      "enabled": false,
+      "runs": 200
+    },
+    "viaIR": false
+  },
+  "addresses": {
+    "token": "0x7e61a37fce010ad620b052273d23efe5dc94bba8",
+    "vesting": "0x2ce49c26cde36e861922e313dbae004583e628be",
+    "provider": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+    "beneficiary": "0x4ee3e1bf5e788c0f844fa9e5a8fbda16ad421d69"
+  },
+  "tokenDecimals": 18,
+  "authorization": {
+    "scheduleId": "0",
+    "ownerEpoch": "1",
+    "nonce": "7",
+    "totalAmountRaw": "100000000000000000000",
+    "cliffDurationSeconds": 120,
+    "durationSeconds": 600
+  },
+  "deploymentCheck": {
+    "creationInputMatchedLocalBuild": true,
+    "runtimeMatchedOutsideImmutableReferences": true,
+    "runtimeBytes": 12233,
+    "etherscanSourceVerification": "not confirmed"
+  },
+  "transactions": {
+    "deployment": {
+      "hash": "0x0e387d2627c86aa1d26ffcca77344d1d623f485fa82f41afbbcbfd1ca7feb7d1",
+      "blockNumber": 11932677,
+      "blockHash": "0x2d43ae37ef6d068ae08dc3fa90caa6dfc272e4a31a50044e7d6be33f539c8faf",
+      "blockTimestamp": 1792221324,
+      "status": "success",
+      "from": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0x0e387d2627c86aa1d26ffcca77344d1d623f485fa82f41afbbcbfd1ca7feb7d1"
+    },
+    "mint": {
+      "hash": "0xc1c12028f7aa23c79d375add229e19c2e8c58f87a0d74a16bf344e71268aabe3",
+      "blockNumber": 11932810,
+      "blockHash": "0xf2d28e48338f750df07b87e02bd50e33c4d8fed41725efdb2f2ca6f5a097e511",
+      "blockTimestamp": 1792222968,
+      "status": "success",
+      "from": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0xc1c12028f7aa23c79d375add229e19c2e8c58f87a0d74a16bf344e71268aabe3"
+    },
+    "approve": {
+      "hash": "0xabb332223199761edfe915969f4f6f333ae3191057585ca8ccaf048fe7a8882b",
+      "blockNumber": 11932820,
+      "blockHash": "0x95539c54939806addf7ce9c99bad2c9f331ed4745f64ce1d76551e10d8f0049a",
+      "blockTimestamp": 1792223100,
+      "status": "success",
+      "from": "0x2e8b51228117b9f2916ad9dc254522f8786a4c2e",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0xabb332223199761edfe915969f4f6f333ae3191057585ca8ccaf048fe7a8882b"
+    },
+    "registration": {
+      "hash": "0x82ec039633be48dc155956484eb545b851ece5b71b594b0276fc88a3d967afea",
+      "blockNumber": 11932828,
+      "blockHash": "0x8978a4462f6563de01ae53b5f84da1bc524d4ffc7a50d1936a78e8beb993cdda",
+      "blockTimestamp": 1792223220,
+      "status": "success",
+      "from": "0x4ee3e1bf5e788c0f844fa9e5a8fbda16ad421d69",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0x82ec039633be48dc155956484eb545b851ece5b71b594b0276fc88a3d967afea"
+    },
+    "firstClaim": {
+      "hash": "0x3e8dddd28492a6fa258766695d3093108569ae916e71d66ca0a2b6fad9e106ee",
+      "blockNumber": 11932850,
+      "blockHash": "0x4eccf90e9867c70c23ef2eb149d511394afbd421728f9996337886ea3fe7446f",
+      "blockTimestamp": 1792223496,
+      "status": "success",
+      "from": "0x4ee3e1bf5e788c0f844fa9e5a8fbda16ad421d69",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0x3e8dddd28492a6fa258766695d3093108569ae916e71d66ca0a2b6fad9e106ee"
+    },
+    "finalClaim": {
+      "hash": "0x61a4e85a3de6bd27aec31674c0d5571b42ea5f5affebad110afa734db60535f6",
+      "blockNumber": 11932890,
+      "blockHash": "0xa1efa20ad447a8d70839c29c15089d6bfcca25b77e9c8cf0b91b7c5a18b56b37",
+      "blockTimestamp": 1792224012,
+      "status": "success",
+      "from": "0x4ee3e1bf5e788c0f844fa9e5a8fbda16ad421d69",
+      "explorerUrl": "https://sepolia.etherscan.io/tx/0x61a4e85a3de6bd27aec31674c0d5571b42ea5f5affebad110afa734db60535f6"
+    }
+  },
+  "balanceSnapshots": [
+    {
+      "after": "beforeMint",
+      "blockNumber": 11932809,
+      "providerRaw": "0",
+      "vestingRaw": "0",
+      "beneficiaryRaw": "100000000000000000000",
+      "allowanceRaw": "0"
+    },
+    {
+      "after": "mint",
+      "blockNumber": 11932810,
+      "providerRaw": "100000000000000000000",
+      "vestingRaw": "0",
+      "beneficiaryRaw": "100000000000000000000",
+      "allowanceRaw": "0"
+    },
+    {
+      "after": "approve",
+      "blockNumber": 11932820,
+      "providerRaw": "100000000000000000000",
+      "vestingRaw": "0",
+      "beneficiaryRaw": "100000000000000000000",
+      "allowanceRaw": "100000000000000000000"
+    },
+    {
+      "after": "registration",
+      "blockNumber": 11932828,
+      "providerRaw": "0",
+      "vestingRaw": "100000000000000000000",
+      "beneficiaryRaw": "100000000000000000000",
+      "allowanceRaw": "0"
+    },
+    {
+      "after": "firstClaim",
+      "blockNumber": 11932850,
+      "providerRaw": "0",
+      "vestingRaw": "54000000000000000000",
+      "beneficiaryRaw": "146000000000000000000",
+      "allowanceRaw": "0"
+    },
+    {
+      "after": "finalClaim",
+      "blockNumber": 11932890,
+      "providerRaw": "0",
+      "vestingRaw": "0",
+      "beneficiaryRaw": "200000000000000000000",
+      "allowanceRaw": "0"
+    }
+  ],
+  "finalState": {
+    "blockNumber": 11932890,
+    "startTime": 1792223220,
+    "claimedAmountRaw": "100000000000000000000",
+    "releasableAmountRaw": "0",
+    "nonceUsed": true,
+    "after": "finalClaim",
+    "providerRaw": "0",
+    "vestingRaw": "0",
+    "beneficiaryRaw": "200000000000000000000",
+    "allowanceRaw": "0"
+  },
+  "duplicateRegistrationCheck": {
+    "method": "eth_call",
+    "expectedError": "AuthorizationAlreadyUsed(uint256,uint256)",
+    "revertSelector": "0x73104ede",
+    "checkedBeforeDeadline": true
+  },
+  "notes": [
+    "beneficiary balance includes 100 MTK received in an earlier practice; this schedule paid 100 MTK",
+    "signatures and private keys are excluded",
+    "historical snapshots describe this run; later transfers or schedules may change live balances"
+  ]
+}

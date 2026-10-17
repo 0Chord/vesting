@@ -212,9 +212,19 @@ cast call "$LOCAL_TOKEN" 'allowance(address,address)(uint256)' "$LOCAL_PROVIDER"
 | MockERC20 (MTK) | [0x7e61a37fce010ad620b052273d23efe5dc94bba8](https://sepolia.etherscan.io/address/0x7e61a37fce010ad620b052273d23efe5dc94bba8#code) |
 | Vesting | [0xa7894b86bdd8851303212c2fccc24d03fd34baff](https://sepolia.etherscan.io/address/0xa7894b86bdd8851303212c2fccc24d03fd34baff#code) |
 
-Vesting 배포 블록에서 관리자·연결 토큰을 대조하고 공급량·제공자/계약의 토큰 잔고·일정 수가 모두 0임을 확인했습니다. 토큰 발행·승인·일정 생성·청구·취소의 Sepolia 실행은 후속 범위입니다. MTK는 누구나 발행할 수 있는 시험용 토큰이며 소스 검증은 외부 보안 감사를 뜻하지 않습니다.
+위 표는 서명 등록 추가 전 배포의 기록입니다. 그 배포 블록에서 관리자·연결 토큰을 대조하고 공급량·제공자/계약의 토큰 잔고·일정 수가 모두 0임을 확인했습니다. 새 서명 등록 계약과 이후의 mint·approve·등록·청구 실행은 아래 MetaMask 실습 기록에 구분합니다. MTK는 누구나 발행할 수 있는 시험용 토큰이며 소스 검증은 외부 보안 감사를 뜻하지 않습니다.
 
 [단계별 실행 안내](docs/sepolia-deployment.md)에서 기존 계약 조회, 새 배포, 소스 검증과 실패 후 재개를 따라갈 수 있습니다. [배포 기록](deployments/sepolia.json)에는 실제 거래·블록·시각·소스 커밋·컴파일 설정을 보관합니다.
+
+## MetaMask 서명 등록 실습
+
+관리자 P가 지급 조건에 서명하고, 수령자 B가 서명을 제출해 새 일정을 등록하는 [Sepolia 학습 예제](docs/signature-practice.md)입니다. 서명 화면은 로컬에서 실행하고 등록·청구 거래는 Foundry와 MetaMask로 직접 보냅니다. Node.js 22 이상이 필요하며 추가 패키지 설치는 없습니다.
+
+```bash
+node script/signature-practice/serve.mjs
+```
+
+MetaMask가 설치된 Chrome에서 `http://127.0.0.1:4173`을 엽니다. 이 화면은 지급 조건 서명을 요청합니다. `cast send --browser`가 여는 `127.0.0.1:9545`는 Foundry의 지갑 연결 화면입니다. 실제 계약과 거래는 Sepolia에 있습니다. 사용한 새 계약과 거래 기록은 [실행 기록](deployments/sepolia-signature-practice.json)에서 확인합니다.
 
 ## 테스트
 
@@ -241,6 +251,9 @@ forge fmt --check
 forge build --sizes
 forge test -vvv
 
+# 서명 실습 화면의 조건 구성·지갑 요청 검사 (RPC·실제 지갑 없이 실행)
+node --test test/signature-practice/*.test.mjs
+
 # 로컬 실행기의 종료 중 신호 처리 회귀 (실제 Anvil, 새 포트 사용)
 bash test/local-vesting-cleanup.sh
 
@@ -266,7 +279,7 @@ test/local-vesting-cleanup.sh # 정리 중 신호 회귀 (Bash)
 test/mocks/                  # 정상/실패 토큰 대역
 test/helpers/ReentrantActor.sol  # 재진입 호출자
 test/handlers/VestingHandler.sol # invariant 행동 준비·독립 장부
-.github/workflows/test.yml   # 형식·빌드·Forge 검사 CI
+.github/workflows/test.yml   # 형식·빌드·Forge·Node 검사 CI
 foundry.toml                # fuzz256·invariant128×64 설정
 ```
 
@@ -288,6 +301,8 @@ foundry.toml                # fuzz256·invariant128×64 설정
 
 </details>
 
-## 다음 작업
+## 완료 범위와 남은 확인
 
-서명 기반 등록의 실제 MetaMask typed-data 서명·새 계약 Sepolia 배포와 실습은 후속 단계입니다. 기존 Sepolia 주소는 서명 등록 추가 전 버전입니다. 커버리지 측정·정적 분석·사람의 코드 리뷰도 별도 완료 기준으로 확인합니다.
+서명 기반 등록의 실제 MetaMask typed-data 서명·새 계약 Sepolia 배포·등록과 100 MTK 전액 청구를 확인했습니다. [실습 기록](deployments/sepolia-signature-practice.json)과 [재현 안내](docs/signature-practice.md)를 함께 읽을 수 있습니다. 위 초기 Sepolia 배포와 새 서명 등록 배포는 서로 다른 계약입니다.
+
+프로젝트 전체의 커버리지 측정·정적 분석과 새 계약의 Etherscan 소스 검증은 별도 완료 근거를 확인해야 합니다. 테스트·AI 검토와 사람의 코드 이해·검토는 구분합니다.
