@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vesting · 지급 조건 서명 실습</title>
+<style>
+  :root { color-scheme: light; font-family: system-ui, sans-serif; color: #18252c; background: #f3f5f2; }
+  body { max-width: 820px; margin: 48px auto; padding: 0 24px 60px; line-height: 1.7; }
+  h1 { line-height: 1.25; letter-spacing: -.04em; } h2 { margin-top: 36px; font-size: 1.15rem; }
+  section { background: white; padding: 22px; margin: 18px 0; border: 1px solid #d6ddd6; border-radius: 12px; }
+  button, input, select { font: inherit; padding: 9px 14px; border: 1px solid #adb9b2; border-radius: 6px; max-width: 100%; }
+  button { cursor: pointer; background: #154e3b; color: white; } button:disabled { background: #68756e; cursor: default; }
+  label { display: block; margin-bottom: 12px; } code, pre { overflow-wrap: anywhere; }
+  pre { white-space: pre-wrap; font-size: .8rem; background: #f3f5f2; padding: 12px; }
+  #status { padding: 14px; border-left: 4px solid #497d64; background: #e8efe8; white-space: pre-wrap; }
+  a { color: #154e3b; } [hidden] { display: none !important; }
+</style>
+<body>
+<p>SEPOLIA / 학습 예제</p>
+<h1>P가 지급 조건에 서명하기</h1>
+<p>100 MTK를 B에게 지급합니다. B가 등록한 때부터 2분 동안 잠기며, 등록 후 10분에 전체 지급이 완료됩니다.</p>
+<p>이 화면에서 하는 일은 메시지 서명까지입니다. 토큰 approve와 일정 등록은 이후 각각 별도 거래로 진행합니다.</p>
+<section>
+  <h2>1. 제공자 지갑 연결</h2>
+  <p>MetaMask가 설치된 Chrome에서 Sepolia와 P 계정을 선택하세요.</p>
+  <label>지갑 <select id="wallet"><option value="">지갑을 찾는 중</option></select></label>
+  <button id="connect" disabled>지갑 연결</button>
+  <p id="addresses"></p>
+</section>
+<section>
+  <h2>2. 서명할 조건 확인</h2>
+  <label>승인 번호 nonce <input id="nonce" value="7" inputmode="numeric" autocomplete="off"></label>
+  <p>미사용 번호를 입력하세요. 조회한 블록 시각에서 한 시간 뒤를 등록 마감으로 잡습니다. 조건 확인 버튼을 다시 누르면 마감도 새로 정합니다.</p>
+  <button id="prepare" disabled>현재 상태 조회 · 조건 확인</button>
+  <div id="preview" hidden>
+    <p id="deadline"></p>
+    <details><summary>MetaMask에 전달할 전체 데이터</summary><pre id="typed-data"></pre></details>
+  </div>
+</section>
+<section>
+  <h2>3. MetaMask에서 직접 서명</h2>
+  <p>표시된 계약·P·B·금액·기간·마감을 확인한 뒤 요청하세요. 서명은 이 지급 조건에 대한 승인입니다. 아직 사용하지 않은 서명 파일은 B에게 전달하고 공개 저장소에는 올리지 마세요.</p>
+  <button id="sign" disabled>이 조건으로 서명 요청</button>
+  <button id="download" hidden>조건 + 서명 JSON 저장</button>
+</section>
+<p id="status" role="status" aria-live="polite">지갑 연결을 기다립니다. 서명·거래는 아직 실행하지 않았습니다.</p>
+<script type="module" src="/app.mjs"></script>
+</body>
+</html>

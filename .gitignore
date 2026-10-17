@@ -19,3 +19,7 @@ docs/
 /docs/*
 !/docs/sepolia-deployment.md
 !/docs/signed-registration.md
+!/docs/signature-practice.md
+
+# 지갑에서 내려받은 지급 승인 파일은 공개 예제에 포함하지 않는다.
+vesting-authorization*.json
