@@ -14,7 +14,8 @@ docs/
 # Dotenv file
 .env
 
-# 공개 배포 안내 한 파일만 추적하고 다른 로컬 문서는 계속 제외한다.
+# 공개 기능·배포 안내만 추적하고 다른 로컬 문서는 계속 제외한다.
 !/docs/
 /docs/*
 !/docs/sepolia-deployment.md
+!/docs/signed-registration.md
